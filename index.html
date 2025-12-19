@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Santa Sleigh Runner 🎅🎄</title>
+
+<style>
+  body {
+    margin: 0;
+    background: #0b1d2a;
+    font-family: Arial, sans-serif;
+    color: white;
+    text-align: center;
+  }
+
+  canvas {
+    background: linear-gradient(#1e3c72, #2a5298);
+    display: block;
+    margin: auto;
+    border-radius: 12px;
+  }
+
+  h1 {
+    margin: 10px 0;
+  }
+
+  .hint {
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+</style>
+</head>
+
+<body>
+
+<h1>🎅 Santa Sleigh Runner 🎄</h1>
+<p class="hint">Press SPACE or CLICK to jump • Sound turns on after first action</p>
+
+<canvas id="game" width="800" height="250"></canvas>
+
+<!-- 🎵 AUDIO -->
+<audio id="bgMusic" loop>
+  <source src="https://cdn.pixabay.com/audio/2022/12/15/audio_18a8a6e7b7.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="jumpSound">
+  <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_76d6c3cbb1.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="gameOverSound">
+  <source src="https://cdn.pixabay.com/audio/2022/10/18/audio_5a41c99bdb.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+// Audio
+const bgMusic = document.getElementById("bgMusic");
+const jumpSound = document.getElementById("jumpSound");
+const gameOverSound = document.getElementById("gameOverSound");
+let audioStarted = false;
+
+function startAudio() {
+  if (!audioStarted) {
+    bgMusic.volume = 0.4;
+    bgMusic.play();
+    audioStarted = true;
+  }
+}
+
+// Game variables
+let gameSpeed = 5;
+let gravity = 0.6;
+let score = 0;
+let gameOver = false;
+
+// Santa
+const santa = {
+  x: 50,
+  y: 170,
+  width: 50,
+  height: 30,
+  yVelocity: 0,
+  jump() {
+    if (this.y >= 170) {
+      this.yVelocity = -12;
+      jumpSound.currentTime = 0;
+      jumpSound.play();
+    }
+  }
+};
+
+// Obstacles
+let obstacles = [];
+
+function spawnObstacle() {
+  obstacles.push({
+    x: canvas.width,
+    y: 170,
+    width: 25,
+    height: 40
+  });
+}
+
+// Controls
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") {
+    startAudio();
+    santa.jump();
+  }
+});
+
+canvas.addEventListener("click", () => {
+  startAudio();
+  santa.jump();
+});
+
+// Game loop
+function update() {
+  if (gameOver) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Snow effect
+  for (let i = 0; i < 30; i++) {
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 2, 2);
+  }
+
+  // Santa physics
+  santa.yVelocity += gravity;
+  santa.y += santa.yVelocity;
+  if (santa.y > 170) {
+    santa.y = 170;
+    santa.yVelocity = 0;
+  }
+
+  // Draw Santa (sleigh)
+  ctx.fillStyle = "red";
+  ctx.fillRect(santa.x, santa.y, santa.width, santa.height);
+  ctx.fillStyle = "gold";
+  ctx.fillRect(santa.x + 10, santa.y + 20, 30, 5);
+
+  // Obstacles
+  obstacles.forEach(o => {
+    o.x -= gameSpeed;
+    ctx.fillStyle = "green";
+    ctx.fillRect(o.x, o.y, o.width, o.height);
+
+    // Collision
+    if (
+      santa.x < o.x + o.width &&
+      santa.x + santa.width > o.x &&
+      santa.y < o.y + o.height &&
+      santa.y + santa.height > o.y
+    ) {
+      gameOver = true;
+      bgMusic.pause();
+      gameOverSound.play();
+    }
+  });
+
+  obstacles = obstacles.filter(o => o.x > -50);
+
+  if (Math.random() < 0.02) spawnObstacle();
+
+  // Score
+  score++;
+  ctx.fillStyle = "white";
+  ctx.fillText("Score: " + score, 10, 20);
+
+  if (gameOver) {
+    ctx.font = "20px Arial";
+    ctx.fillText("🎄 Game Over! Refresh to play again 🎄", 200, 130);
+  } else {
+    requestAnimationFrame(update);
+  }
+}
+
+update();
+</script>
+
+</body>
+</html>
