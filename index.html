@@ -1,184 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Santa Sleigh Runner 🎅🎄</title>
+<meta charset="UTF-8">
+<title>Santa Sleigh Runner 🎄</title>
 
 <style>
-  body {
-    margin: 0;
-    background: #0b1d2a;
-    font-family: Arial, sans-serif;
-    color: white;
-    text-align: center;
-  }
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #0b2a44, #041726);
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
 
-  canvas {
-    background: linear-gradient(#1e3c72, #2a5298);
-    display: block;
-    margin: auto;
-    border-radius: 12px;
-  }
-
-  h1 {
-    margin: 10px 0;
-  }
-
-  .hint {
-    font-size: 0.9rem;
-    opacity: 0.8;
-  }
+canvas {
+  display: block;
+  margin: 20px auto;
+  background: linear-gradient(#1e3c72, #2a5298);
+  border-radius: 12px;
+}
 </style>
 </head>
 
 <body>
 
 <h1>🎅 Santa Sleigh Runner 🎄</h1>
-<p class="hint">Press SPACE or CLICK to jump • Sound turns on after first action</p>
+<p>Press SPACE or CLICK to jump • Sound starts after first action</p>
 
-<canvas id="game" width="800" height="250"></canvas>
+<canvas id="game" width="800" height="260"></canvas>
 
-<!-- 🎵 AUDIO -->
+<!-- 🔊 REAL AUDIO FILES -->
 <audio id="bgMusic" loop>
-  <source src="https://cdn.pixabay.com/audio/2022/12/15/audio_18a8a6e7b7.mp3" type="audio/mpeg">
+  <source src="https://cdn.pixabay.com/audio/2022/12/05/audio_8a6b2a5b30.mp3" type="audio/mpeg">
 </audio>
 
 <audio id="jumpSound">
-  <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_76d6c3cbb1.mp3" type="audio/mpeg">
+  <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_66fcb2a3b3.mp3" type="audio/mpeg">
 </audio>
 
-<audio id="gameOverSound">
-  <source src="https://cdn.pixabay.com/audio/2022/10/18/audio_5a41c99bdb.mp3" type="audio/mpeg">
+<audio id="crashSound">
+  <source src="https://cdn.pixabay.com/audio/2022/03/10/audio_91b7d5f4f6.mp3" type="audio/mpeg">
 </audio>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// Audio
 const bgMusic = document.getElementById("bgMusic");
 const jumpSound = document.getElementById("jumpSound");
-const gameOverSound = document.getElementById("gameOverSound");
-let audioStarted = false;
+const crashSound = document.getElementById("crashSound");
 
-function startAudio() {
-  if (!audioStarted) {
-    bgMusic.volume = 0.4;
-    bgMusic.play();
-    audioStarted = true;
-  }
-}
-
-// Game variables
-let gameSpeed = 5;
-let gravity = 0.6;
-let score = 0;
+let started = false;
 let gameOver = false;
+let score = 0;
+let speed = 5;
+const gravity = 0.6;
 
-// Santa
 const santa = {
-  x: 50,
-  y: 170,
-  width: 50,
-  height: 30,
-  yVelocity: 0,
-  jump() {
-    if (this.y >= 170) {
-      this.yVelocity = -12;
-      jumpSound.currentTime = 0;
-      jumpSound.play();
-    }
-  }
+  x: 60,
+  y: 180,
+  w: 50,
+  h: 30,
+  vy: 0,
+  grounded: true
 };
 
-// Obstacles
 let obstacles = [];
+let timer = 0;
 
-function spawnObstacle() {
-  obstacles.push({
-    x: canvas.width,
-    y: 170,
-    width: 25,
-    height: 40
-  });
+function startSound() {
+  if (!started) {
+    bgMusic.volume = 0.3;
+    bgMusic.play();
+    started = true;
+  }
 }
 
-// Controls
-document.addEventListener("keydown", e => {
-  if (e.code === "Space") {
-    startAudio();
-    santa.jump();
+function jump() {
+  startSound();
+  if (santa.grounded && !gameOver) {
+    santa.vy = -13;
+    santa.grounded = false;
+    jumpSound.currentTime = 0;
+    jumpSound.play();
   }
-});
+  if (gameOver) location.reload();
+}
 
-canvas.addEventListener("click", () => {
-  startAudio();
-  santa.jump();
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") jump();
 });
+canvas.addEventListener("click", jump);
 
-// Game loop
+function spawnObstacle() {
+  obstacles.push({ x: canvas.width, y: 180, w: 30, h: 40 });
+}
+
 function update() {
-  if (gameOver) return;
-
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Snow effect
-  for (let i = 0; i < 30; i++) {
-    ctx.fillStyle = "rgba(255,255,255,0.5)";
-    ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 2, 2);
+  // Snow
+  ctx.fillStyle = "rgba(255,255,255,0.6)";
+  for (let i = 0; i < 25; i++) {
+    ctx.fillRect(Math.random()*800, Math.random()*260, 2, 2);
   }
+
+  // Ground
+  ctx.strokeStyle = "rgba(255,255,255,0.4)";
+  ctx.beginPath();
+  ctx.moveTo(0, 210);
+  ctx.lineTo(800, 210);
+  ctx.stroke();
 
   // Santa physics
-  santa.yVelocity += gravity;
-  santa.y += santa.yVelocity;
-  if (santa.y > 170) {
-    santa.y = 170;
-    santa.yVelocity = 0;
+  santa.vy += gravity;
+  santa.y += santa.vy;
+  if (santa.y >= 180) {
+    santa.y = 180;
+    santa.vy = 0;
+    santa.grounded = true;
   }
 
-  // Draw Santa (sleigh)
+  // Santa
   ctx.fillStyle = "red";
-  ctx.fillRect(santa.x, santa.y, santa.width, santa.height);
+  ctx.fillRect(santa.x, santa.y, santa.w, santa.h);
   ctx.fillStyle = "gold";
-  ctx.fillRect(santa.x + 10, santa.y + 20, 30, 5);
+  ctx.fillRect(santa.x + 10, santa.y + 10, 30, 6);
 
   // Obstacles
-  obstacles.forEach(o => {
-    o.x -= gameSpeed;
-    ctx.fillStyle = "green";
-    ctx.fillRect(o.x, o.y, o.width, o.height);
+  timer++;
+  if (timer > 90 && !gameOver) {
+    spawnObstacle();
+    timer = 0;
+  }
 
-    // Collision
+  obstacles.forEach((o, i) => {
+    o.x -= speed;
+    ctx.fillStyle = "green";
+    ctx.fillRect(o.x, o.y, o.w, o.h);
+
     if (
-      santa.x < o.x + o.width &&
-      santa.x + santa.width > o.x &&
-      santa.y < o.y + o.height &&
-      santa.y + santa.height > o.y
+      santa.x < o.x + o.w &&
+      santa.x + santa.w > o.x &&
+      santa.y < o.y + o.h &&
+      santa.y + santa.h > o.y
     ) {
       gameOver = true;
       bgMusic.pause();
-      gameOverSound.play();
+      crashSound.play();
     }
+
+    if (o.x + o.w < 0) obstacles.splice(i, 1);
   });
 
-  obstacles = obstacles.filter(o => o.x > -50);
+  if (!gameOver) score++;
+  speed = 5 + score / 500;
 
-  if (Math.random() < 0.02) spawnObstacle();
-
-  // Score
-  score++;
   ctx.fillStyle = "white";
   ctx.fillText("Score: " + score, 10, 20);
 
   if (gameOver) {
-    ctx.font = "20px Arial";
-    ctx.font = "22px Arial";
-    ctx.fillText("🎄 Merry Christmas! 🎅", 260, 115);
-    ctx.font = "14px Arial";
-    ctx.fillText("Refresh to ride the sleigh again ❄️", 280, 140);
-  } else {
-    requestAnimationFrame(update);
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(0,0,800,260);
+    ctx.font = "28px Arial";
+    ctx.fillText("🎄 Merry Christmas! 🎅", 240, 120);
+    ctx.font = "16px Arial";
+    ctx.fillText("Press SPACE or CLICK to play again ❄️", 230, 150);
+    return;
   }
+
+  requestAnimationFrame(update);
 }
 
 update();
