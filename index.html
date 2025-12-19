@@ -172,7 +172,10 @@ function update() {
 
   if (gameOver) {
     ctx.font = "20px Arial";
-    ctx.fillText("🎄 Game Over! Refresh to play again 🎄", 200, 130);
+    ctx.font = "22px Arial";
+    ctx.fillText("🎄 Merry Christmas! 🎅", 260, 115);
+    ctx.font = "14px Arial";
+    ctx.fillText("Refresh to ride the sleigh again ❄️", 280, 140);
   } else {
     requestAnimationFrame(update);
   }
